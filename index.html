@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍣 寿司パズル</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #FFF8F0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .game-board {
+            border: 3px solid #B0BEC5;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(15, 50px);
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            border: 1px solid rgba(0,0,0,0.06);
+            background: #F0EDE8;
+            overflow: hidden;
+        }
+
+        .cell svg { display: block; width: 100%; height: 100%; }
+
+        @keyframes sushiPop {
+            0%   { transform: scale(1);    opacity: 1;   filter: brightness(1); }
+            25%  { transform: scale(1.2);  opacity: 1;   filter: brightness(2); }
+            65%  { transform: scale(0.85); opacity: 0.5; filter: brightness(1.4); }
+            100% { transform: scale(0);    opacity: 0; }
+        }
+
+        .cell.matched {
+            animation: sushiPop 0.45s ease forwards;
+            overflow: visible;
+            z-index: 10;
+        }
+
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 120px;
+        }
+
+        .box {
+            background: #FFF;
+            border: 3px solid #B0BEC5;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .box h3 { font-size: 13px; color: #888; margin-bottom: 8px; }
+
+        .score { font-size: 32px; font-weight: bold; color: #333; }
+
+        .next-piece {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+        .next-piece svg { display: block; width: 100%; height: 100%; }
+
+        .btn {
+            background: #FF6B6B;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn:hover { background: #FF5252; }
+
+        .controls {
+            background: #FFF;
+            border: 3px solid #B0BEC5;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.8;
+        }
+        .controls h3 { font-size: 13px; color: #888; margin-bottom: 6px; }
+
+        @keyframes levelUpAnim {
+            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            70%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        #levelup-msg {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #FFD740;
+            color: #333;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 16px 32px;
+            border-radius: 12px;
+            border: 3px solid #B0BEC5;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #levelup-msg.show {
+            display: block;
+            animation: levelUpAnim 1s ease forwards;
+        }
+
+        /* タッチボタン（スマホのみ表示） */
+        .touch-controls {
+            display: none;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+        .touch-btn {
+            width: 72px;
+            height: 72px;
+            font-size: 26px;
+            background: #FFF;
+            border: 3px solid #B0BEC5;
+            border-radius: 50%;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.1s, transform 0.1s;
+        }
+        .touch-btn:active {
+            background: #FFE4E4;
+            transform: scale(0.92);
+        }
+
+        /* モバイルレイアウト */
+        @media (max-width: 620px) {
+            body { align-items: flex-start; padding: 16px 0; }
+            .game-container { flex-direction: column; align-items: center; }
+            .board-grid {
+                grid-template-columns: repeat(8, 38px);
+                grid-template-rows: repeat(15, 38px);
+            }
+            .cell { width: 38px; height: 38px; }
+            .next-piece { width: 38px; height: 38px; }
+            .side-panel {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                min-width: unset;
+                width: 100%;
+                max-width: 320px;
+                gap: 10px;
+            }
+            .box { flex: 1; min-width: 75px; padding: 10px; }
+            .score { font-size: 24px; }
+            .btn { padding: 10px 20px; width: auto; }
+            .controls { display: none; }
+            .touch-controls { display: flex; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="game-board">
+        <div class="board-grid" id="board"></div>
+    </div>
+    <div class="side-panel">
+        <div class="box">
+            <h3>レベル</h3>
+            <div class="score" id="level">1</div>
+        </div>
+        <div class="box">
+            <h3>スコア</h3>
+            <div class="score" id="score">0</div>
+        </div>
+        <div class="box">
+            <h3>次のピース</h3>
+            <div class="next-piece" id="next-piece"></div>
+        </div>
+        <button class="btn" id="start-btn">スタート</button>
+        <div class="controls">
+            <h3>操作方法</h3>
+            ← → 移動<br>
+            ↓ 落とす
+        </div>
+    </div>
+</div>
+
+<div class="touch-controls">
+    <button class="touch-btn" id="btn-left">◀</button>
+    <button class="touch-btn" id="btn-down">▼</button>
+    <button class="touch-btn" id="btn-right">▶</button>
+</div>
+
+<div id="levelup-msg">LEVEL UP! 🍣</div>
+
+<script>
+// ── SVG寿司ブロック ────────────────────────────────────────────────
+// 共通パーツ：シャリ（酢飯）
+function riceBlock(y1) {
+    return `
+    <rect x="2" y="${y1}" width="46" height="${48 - y1}" fill="#FFF5D6"/>
+    <rect x="2" y="${y1}" width="46" height="4" fill="#FFFFFF" opacity="0.7"/>
+    <rect x="2" y="44" width="46" height="4" fill="#D4B870"/>
+    <line x1="7" y1="${y1+9}" x2="22" y2="${y1+9}" stroke="#D4C070" stroke-width="1.5"/>
+    <line x1="26" y1="${y1+9}" x2="43" y2="${y1+9}" stroke="#D4C070" stroke-width="1.5"/>
+    <line x1="9" y1="${y1+15}" x2="21" y2="${y1+15}" stroke="#D4C070" stroke-width="1.5"/>
+    <line x1="25" y1="${y1+15}" x2="41" y2="${y1+15}" stroke="#D4C070" stroke-width="1.5"/>`;
+}
+
+// 共通パーツ：のり（海苔）帯
+function noriStrip(y) {
+    return `<rect x="2" y="${y}" width="46" height="5" fill="#5A7A5A"/>`;
+}
+
+// 共通パーツ：外枠
+const outline = `<rect x="1" y="1" width="48" height="48" fill="none" stroke="#A0B4C0" stroke-width="2"/>`;
+
+const SUSHI_SVG = {
+
+    // まぐろ：赤ピンク、横の繊維ライン
+    tuna: `<svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="46" height="28" fill="#E8435A"/>
+        <rect x="2" y="2" width="46" height="5" fill="#EF6878" opacity="0.8"/>
+        <line x1="6" y1="13" x2="44" y2="13" stroke="#C0293A" stroke-width="2"/>
+        <line x1="6" y1="21" x2="44" y2="21" stroke="#C0293A" stroke-width="2"/>
+        ${noriStrip(28)}
+        ${riceBlock(32)}
+        ${outline}
+    </svg>`,
+
+    // サーモン：オレンジ、斜めの大理石模様
+    salmon: `<svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="46" height="28" fill="#FF7043"/>
+        <rect x="2" y="2" width="46" height="5" fill="#FF8A65" opacity="0.8"/>
+        <line x1="2"  y1="16" x2="22" y2="2"  stroke="#E64A19" stroke-width="3"/>
+        <line x1="16" y1="30" x2="44" y2="6"  stroke="#E64A19" stroke-width="3"/>
+        <line x1="28" y1="30" x2="48" y2="14" stroke="#E64A19" stroke-width="3"/>
+        ${noriStrip(28)}
+        ${riceBlock(32)}
+        ${outline}
+    </svg>`,
+
+    // えび：薄ピンク、横の節ライン
+    shrimp: `<svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="46" height="28" fill="#FFAB91"/>
+        <rect x="2" y="2" width="46" height="5" fill="#FFCCBC" opacity="0.8"/>
+        <rect x="2" y="11" width="46" height="4" fill="#FF8A65" opacity="0.5"/>
+        <rect x="2" y="19" width="46" height="4" fill="#FF8A65" stroke-width="0.5" opacity="0.5"/>
+        <rect x="6" y="4" width="6" height="6" fill="#FF8A65" rx="1"/>
+        <rect x="14" y="4" width="6" height="6" fill="#FF7043" rx="1"/>
+        ${noriStrip(28)}
+        ${riceBlock(32)}
+        ${outline}
+    </svg>`,
+
+    // たまご：黄色、のり帯を中央に巻いた玉子スタイル
+    egg: `<svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+        ${riceBlock(35)}
+        <rect x="2" y="29" width="46" height="8" fill="#5A7A5A"/>
+        <rect x="2" y="2" width="46" height="28" fill="#FFD740"/>
+        <rect x="2" y="2" width="46" height="5" fill="#FFE57F" opacity="0.8"/>
+        <rect x="2" y="23" width="46" height="5" fill="#FFAB00" opacity="0.4"/>
+        ${outline}
+    </svg>`,
+
+    // いくら：軍艦スタイル、のり枠の中にオレンジの粒
+    roe: `<svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+        ${riceBlock(30)}
+        <rect x="2" y="26" width="46" height="5" fill="#5A7A5A"/>
+        <rect x="2" y="4"  width="5" height="28" fill="#5A7A5A"/>
+        <rect x="43" y="4" width="5" height="28" fill="#5A7A5A"/>
+        <rect x="7" y="4" width="36" height="23" fill="#A04030"/>
+        <circle cx="15" cy="11" r="5" fill="#FF5722"/>
+        <circle cx="25" cy="11" r="5" fill="#FF7043"/>
+        <circle cx="35" cy="11" r="5" fill="#FF5722"/>
+        <circle cx="10" cy="21" r="5" fill="#FF7043"/>
+        <circle cx="20" cy="21" r="5" fill="#FF5722"/>
+        <circle cx="30" cy="21" r="5" fill="#FF7043"/>
+        <circle cx="40" cy="21" r="5" fill="#FF5722"/>
+        <circle cx="13" cy="9"  r="2" fill="#FF8A65" opacity="0.7"/>
+        <circle cx="23" cy="9"  r="2" fill="#FF8A65" opacity="0.7"/>
+        <circle cx="33" cy="9"  r="2" fill="#FF8A65" opacity="0.7"/>
+        ${outline}
+    </svg>`,
+};
+
+// ── ゲームロジック ────────────────────────────────────────────────
+const SUSHI = [
+    { name: 'tuna'   },
+    { name: 'salmon' },
+    { name: 'shrimp' },
+    { name: 'egg'    },
+    { name: 'roe'    },
+];
+
+const COLS = 8, ROWS = 15;
+let board = [], current = null, next = null;
+let col = 0, row = 0, score = 0, level = 1;
+let timer = null, running = false;
+
+function getSpeed() {
+    return Math.max(150, 800 - (level - 1) * 70);
+}
+
+function updateLevel() {
+    const newLevel = Math.min(10, Math.floor(score / 100) + 1);
+    if (newLevel > level) {
+        level = newLevel;
+        document.getElementById('level').textContent = level;
+        showLevelUp();
+        clearInterval(timer);
+        timer = setInterval(moveDown, getSpeed());
+    }
+}
+
+function showLevelUp() {
+    const msg = document.getElementById('levelup-msg');
+    msg.classList.remove('show');
+    void msg.offsetWidth; // リフロー強制
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 1000);
+}
+
+function initBoard() {
+    board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+}
+
+function randomSushi() {
+    return SUSHI[Math.floor(Math.random() * SUSHI.length)];
+}
+
+function render() {
+    const el = document.getElementById('board');
+    el.innerHTML = '';
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            const piece = (r === row && c === col && current) ? current : board[r][c];
+            if (piece) {
+                cell.innerHTML = SUSHI_SVG[piece.name];
+                if (piece.matched) cell.classList.add('matched');
+            }
+            el.appendChild(cell);
+        }
+    }
+}
+
+function spawnPiece() {
+    current = next || randomSushi();
+    next = randomSushi();
+    col = Math.floor(COLS / 2);
+    row = 0;
+    document.getElementById('next-piece').innerHTML = SUSHI_SVG[next.name];
+    if (board[row][col]) { gameOver(); return; }
+}
+
+function moveDown() {
+    if (row + 1 < ROWS && !board[row + 1][col]) {
+        row++;
+    } else {
+        board[row][col] = current;
+        checkMatches();
+        spawnPiece();
+    }
+    render();
+}
+
+function moveLeft()  { if (col > 0 && !board[row][col-1]) { col--; render(); } }
+function moveRight() { if (col < COLS-1 && !board[row][col+1]) { col++; render(); } }
+
+function checkMatches() {
+    const matched = new Set();
+
+    for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS - 2; c++)
+            if (board[r][c] && board[r][c+1] && board[r][c+2] &&
+                board[r][c].name === board[r][c+1].name &&
+                board[r][c].name === board[r][c+2].name)
+                [c, c+1, c+2].forEach(x => matched.add(`${r},${x}`));
+
+    for (let r = 0; r < ROWS - 2; r++)
+        for (let c = 0; c < COLS; c++)
+            if (board[r][c] && board[r+1][c] && board[r+2][c] &&
+                board[r][c].name === board[r+1][c].name &&
+                board[r][c].name === board[r+2][c].name)
+                [r, r+1, r+2].forEach(x => matched.add(`${x},${c}`));
+
+    if (matched.size === 0) return;
+
+    // アニメーション用にマッチしたセルにフラグを立てる
+    matched.forEach(key => {
+        const [r, c] = key.split(',').map(Number);
+        board[r][c] = { ...board[r][c], matched: true };
+    });
+    render();
+
+    // アニメーション終了後に消してグラビティ適用
+    setTimeout(() => {
+        matched.forEach(key => {
+            const [r, c] = key.split(',').map(Number);
+            board[r][c] = null;
+        });
+        score += matched.size * 10;
+        document.getElementById('score').textContent = score;
+        updateLevel();
+        applyGravity();
+        setTimeout(checkMatches, 150);
+    }, 450);
+}
+
+function applyGravity() {
+    for (let c = 0; c < COLS; c++) {
+        let empty = ROWS - 1;
+        for (let r = ROWS - 1; r >= 0; r--) {
+            if (board[r][c]) {
+                board[empty][c] = board[r][c];
+                if (empty !== r) board[r][c] = null;
+                empty--;
+            }
+        }
+    }
+    render();
+}
+
+function gameOver() {
+    clearInterval(timer);
+    running = false;
+    document.getElementById('start-btn').textContent = 'もう一度';
+    setTimeout(() => alert(`ゲームオーバー！\nスコア: ${score}`), 100);
+}
+
+function startGame() {
+    initBoard();
+    score = 0; level = 1;
+    document.getElementById('score').textContent = '0';
+    document.getElementById('level').textContent = '1';
+    next = randomSushi();
+    spawnPiece();
+    render();
+    clearInterval(timer);
+    timer = setInterval(moveDown, getSpeed());
+    running = true;
+    document.getElementById('start-btn').textContent = 'リスタート';
+}
+
+// キーボード操作
+document.addEventListener('keydown', e => {
+    if (!running) return;
+    if (e.key === 'ArrowLeft')  moveLeft();
+    if (e.key === 'ArrowRight') moveRight();
+    if (e.key === 'ArrowDown')  moveDown();
+});
+
+// タッチボタン操作
+document.getElementById('btn-left').addEventListener('click', () => { if (running) moveLeft(); });
+document.getElementById('btn-right').addEventListener('click', () => { if (running) moveRight(); });
+document.getElementById('btn-down').addEventListener('click', () => { if (running) moveDown(); });
+
+// スワイプ操作
+let touchStartX = 0, touchStartY = 0;
+document.getElementById('board').addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    e.preventDefault();
+}, { passive: false });
+
+document.getElementById('board').addEventListener('touchend', e => {
+    if (!running) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 20) moveRight();
+        else if (dx < -20) moveLeft();
+    } else {
+        if (dy > 20) moveDown();
+    }
+    e.preventDefault();
+}, { passive: false });
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+
+initBoard();
+render();
+</script>
+</body>
+</html>
