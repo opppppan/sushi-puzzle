@@ -160,6 +160,31 @@
             transform: scale(0.92);
         }
 
+        /* スタートオーバーレイ */
+        #start-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            pointer-events: none;
+        }
+        #start-overlay.hidden { display: none; }
+        .start-overlay-btn {
+            pointer-events: all;
+            font-size: 22px;
+            padding: 18px 48px;
+            border-radius: 16px;
+            background: #FF6B6B;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .start-overlay-btn:hover { background: #FF5252; }
+
         /* モバイルレイアウト */
         @media (max-width: 900px) {
             body { align-items: flex-start; padding: 12px 0; }
@@ -167,6 +192,7 @@
                 flex-direction: column;
                 align-items: center;
             }
+            .side-panel { order: -1; }
             .board-grid {
                 grid-template-columns: repeat(6, 44px);
                 grid-template-rows: repeat(10, 44px);
@@ -215,13 +241,16 @@
             <h3>次のピース</h3>
             <div class="next-piece" id="next-piece"></div>
         </div>
-        <button class="btn" id="start-btn">スタート</button>
         <div class="controls">
             <h3>操作方法</h3>
             ← → 移動<br>
             ↓ 落とす
         </div>
     </div>
+</div>
+
+<div id="start-overlay">
+    <button class="start-overlay-btn" id="start-btn">スタート</button>
 </div>
 
 
@@ -460,11 +489,15 @@ function applyGravity() {
 function gameOver() {
     clearInterval(timer);
     running = false;
-    document.getElementById('start-btn').textContent = 'もう一度';
-    setTimeout(() => alert(`ゲームオーバー！\nスコア: ${score}`), 100);
+    setTimeout(() => {
+        alert(`ゲームオーバー！\nスコア: ${score}`);
+        document.getElementById('start-btn').textContent = 'もう一度';
+        document.getElementById('start-overlay').classList.remove('hidden');
+    }, 100);
 }
 
 function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
     initBoard();
     score = 0; level = 1;
     document.getElementById('score').textContent = '0';
@@ -475,7 +508,6 @@ function startGame() {
     clearInterval(timer);
     timer = setInterval(moveDown, getSpeed());
     running = true;
-    document.getElementById('start-btn').textContent = 'リスタート';
 }
 
 // キーボード操作
