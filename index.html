@@ -161,26 +161,29 @@
         }
 
         /* モバイルレイアウト */
-        @media (max-width: 620px) {
-            body { align-items: flex-start; padding: 16px 0; }
-            .game-container { flex-direction: column; align-items: center; }
-            .board-grid {
-                grid-template-columns: repeat(8, 38px);
-                grid-template-rows: repeat(15, 38px);
+        @media (max-width: 900px) {
+            body { align-items: flex-start; padding: 12px 0; }
+            .game-container {
+                flex-direction: column;
+                align-items: center;
             }
-            .cell { width: 38px; height: 38px; }
-            .next-piece { width: 38px; height: 38px; }
+            .board-grid {
+                grid-template-columns: repeat(8, 32px);
+                grid-template-rows: repeat(15, 32px);
+            }
+            .cell { width: 32px; height: 32px; }
+            .next-piece { width: 32px; height: 32px; }
             .side-panel {
                 flex-direction: row;
                 flex-wrap: wrap;
                 justify-content: center;
                 min-width: unset;
                 width: 100%;
-                max-width: 320px;
-                gap: 10px;
+                max-width: 280px;
+                gap: 8px;
             }
-            .box { flex: 1; min-width: 75px; padding: 10px; }
-            .score { font-size: 24px; }
+            .box { flex: 1; min-width: 70px; padding: 8px; }
+            .score { font-size: 20px; }
             .btn { padding: 10px 20px; width: auto; }
             .controls { display: none; }
             .touch-controls { display: flex; }
@@ -189,8 +192,15 @@
 </head>
 <body>
 <div class="game-container">
-    <div class="game-board">
-        <div class="board-grid" id="board"></div>
+    <div>
+        <div class="game-board">
+            <div class="board-grid" id="board"></div>
+        </div>
+        <div class="touch-controls">
+            <button class="touch-btn" id="btn-left">◀</button>
+            <button class="touch-btn" id="btn-down">▼</button>
+            <button class="touch-btn" id="btn-right">▶</button>
+        </div>
     </div>
     <div class="side-panel">
         <div class="box">
@@ -214,11 +224,6 @@
     </div>
 </div>
 
-<div class="touch-controls">
-    <button class="touch-btn" id="btn-left">◀</button>
-    <button class="touch-btn" id="btn-down">▼</button>
-    <button class="touch-btn" id="btn-right">▶</button>
-</div>
 
 <div id="levelup-msg">LEVEL UP! 🍣</div>
 
