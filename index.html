@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>🍣 寿司パズル</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -153,6 +153,7 @@
             cursor: pointer;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
             transition: background 0.1s, transform 0.1s;
         }
         .touch-btn:active {
@@ -519,9 +520,27 @@ document.addEventListener('keydown', e => {
 });
 
 // タッチボタン操作
-document.getElementById('btn-left').addEventListener('click', () => { if (running) moveLeft(); });
-document.getElementById('btn-right').addEventListener('click', () => { if (running) moveRight(); });
-document.getElementById('btn-down').addEventListener('click', () => { if (running) moveDown(); });
+// 長押し対応ボタン
+function setupBtn(id, action) {
+    const btn = document.getElementById(id);
+    let iv = null;
+    const start = (e) => {
+        e.preventDefault();
+        if (!running) return;
+        action();
+        iv = setInterval(() => { if (running) action(); }, 120);
+    };
+    const stop = () => { clearInterval(iv); iv = null; };
+    btn.addEventListener('touchstart', start, { passive: false });
+    btn.addEventListener('touchend',   stop);
+    btn.addEventListener('touchcancel', stop);
+    btn.addEventListener('mousedown', start);
+    btn.addEventListener('mouseup',   stop);
+    btn.addEventListener('mouseleave', stop);
+}
+setupBtn('btn-left',  moveLeft);
+setupBtn('btn-right', moveRight);
+setupBtn('btn-down',  moveDown);
 
 // スワイプ操作
 let touchStartX = 0, touchStartY = 0;
