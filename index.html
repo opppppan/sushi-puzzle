@@ -31,7 +31,7 @@
         .board-grid {
             display: grid;
             grid-template-columns: repeat(6, 50px);
-            grid-template-rows: repeat(12, 50px);
+            grid-template-rows: repeat(10, 50px);
         }
 
         .cell {
@@ -169,7 +169,7 @@
             }
             .board-grid {
                 grid-template-columns: repeat(6, 44px);
-                grid-template-rows: repeat(12, 44px);
+                grid-template-rows: repeat(10, 44px);
             }
             .cell { width: 44px; height: 44px; }
             .next-piece { width: 44px; height: 44px; }
@@ -327,7 +327,7 @@ const SUSHI = [
     { name: 'roe'    },
 ];
 
-const COLS = 6, ROWS = 12;
+const COLS = 6, ROWS = 10;
 let board = [], current = null, next = null;
 let col = 0, row = 0, score = 0, level = 1;
 let timer = null, running = false;
