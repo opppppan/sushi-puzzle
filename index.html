@@ -649,16 +649,15 @@
 
         /* スマホ：中央固定オーバーレイに戻す */
         @media (max-width: 900px) {
-            #start-overlay {
+            #start-overlay:not(.hidden) {
+                display: flex !important;
                 position: fixed;
                 top: 0; left: 0; right: 0; bottom: 0;
-                display: flex;
                 align-items: center;
                 justify-content: center;
                 z-index: 50;
                 pointer-events: none;
             }
-            #start-overlay.hidden { display: none; }
             .start-overlay-btn {
                 pointer-events: all;
                 width: auto;
@@ -668,7 +667,7 @@
 
         /* モバイルレイアウト */
         @media (max-width: 900px) {
-            body { align-items: flex-start; padding: 12px 0; }
+            body { align-items: flex-start; padding: 8px 0; }
             .game-container {
                 flex-direction: column;
                 align-items: center;
@@ -682,18 +681,33 @@
             .next-piece { width: 44px; height: 44px; }
             .side-panel {
                 flex-direction: row;
-                flex-wrap: wrap;
+                flex-wrap: nowrap;
                 justify-content: center;
+                align-items: stretch;
                 min-width: unset;
                 width: 100%;
-                max-width: 280px;
-                gap: 8px;
+                max-width: 300px;
+                height: auto;
+                gap: 6px;
             }
-            .box { flex: 1; min-width: 70px; padding: 8px; }
-            .score { font-size: 20px; }
-            .btn { padding: 10px 20px; width: auto; }
+            /* SP：各アイテムの flex:1 上書き */
+            .side-panel > * {
+                flex: 0 0 auto;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                min-height: unset;
+            }
+            .box { flex: 1 1 0 !important; min-width: 0; padding: 6px 4px; }
+            .score { font-size: 18px; }
+            .box h3 { font-size: 11px; margin-bottom: 4px; }
+            .next-piece { width: 36px; height: 36px; }
             .controls { display: none; }
             .touch-controls { display: flex; }
+            /* スタートボタンはSP時オーバーレイなので非表示 */
+            #start-overlay {
+                display: none !important;
+            }
         }
     </style>
 </head>
